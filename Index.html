@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventário de Ativos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --azul-claro:#00baff;
+      --azul-medio:#006aff;
+      --azul-escuro:#002766;
+      --branco:#fff;
+      --preto:#000;
+      --fundo:#f7fafc;
+      --texto:#17324d;
+      --muted:#667085;
+      --borda:#e5eaf0;
+      --sucesso:#16a34a;
+      --perigo:#dc2626;
+      --sombra:0 10px 30px rgba(0,39,102,.07);
+    }
+    *{box-sizing:border-box;font-family:"Montserrat",Arial,sans-serif}
+    body{margin:0;background:var(--fundo);color:var(--texto)}
+    button,input,select{font-family:inherit}
+    button{cursor:pointer}
+    button:disabled{opacity:.6;cursor:wait}
+    .app{display:flex;min-height:100vh}
+    .sidebar{position:fixed;left:0;top:0;bottom:0;width:250px;background:var(--azul-escuro);padding:24px 16px;color:#fff;z-index:10;overflow:hidden}
+    .sidebar:before{content:"";position:absolute;width:280px;height:280px;right:-180px;top:-90px;border:55px solid rgba(0,186,255,.24);border-radius:50%}
+    .brand{position:relative;display:flex;align-items:center;padding:8px 10px 26px;border-bottom:1px solid rgba(255,255,255,.16)}
+    .brand strong{font-size:13px;display:block}.brand span{font-size:10px;color:#b9cce0;display:block;margin-top:3px}
+    .menu-title{margin:25px 10px 10px;color:#91aaca;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
+    .menu-item{position:relative;width:100%;border:0;background:transparent;color:#dce8f5;text-align:left;padding:13px 12px;border-radius:10px;margin-bottom:6px;font-size:12px;font-weight:600}
+    .menu-item:hover,.menu-item.ativo{background:rgba(0,186,255,.16);color:#fff}.menu-item .icon{display:inline-block;width:24px;font-size:15px}
+    .sidebar-footer{position:absolute;left:26px;right:26px;bottom:22px;color:#91aaca;font-size:10px;line-height:1.5}
+    .main{margin-left:250px;width:calc(100% - 250px);min-height:100vh}
+    .topbar{height:88px;background:#fff;border-bottom:1px solid var(--borda);display:flex;align-items:center;justify-content:space-between;padding:0 34px}
+    .topbar h1{margin:0;color:var(--azul-escuro);font-size:22px;font-weight:800}.topbar p{margin:5px 0 0;color:var(--muted);font-size:11px}
+    .top-user{display:flex;align-items:center;gap:10px}.avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--azul-claro),var(--azul-medio));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}.top-user strong{font-size:11px;color:var(--azul-escuro);display:block}.top-user span{font-size:9px;color:var(--muted);display:block;margin-top:3px}
+    .content{padding:28px 34px 45px;max-width:1450px;margin:auto}
+    .mensagem{display:none;padding:13px 16px;border-radius:10px;margin-bottom:20px;font-size:11px;font-weight:600}.mensagem.sucesso{display:block;background:#e8f8ee;color:#147a43;border:1px solid #bfe9ce}.mensagem.erro{display:block;background:#fff0f0;color:#b42318;border:1px solid #ffd0d0}
+    .card{position:relative;background:#fff;border:1px solid var(--borda);border-radius:18px;padding:24px;box-shadow:var(--sombra);margin-bottom:22px;overflow:hidden}.card:before{content:"";position:absolute;width:120px;height:120px;right:-80px;top:-70px;border:18px solid rgba(0,186,255,.08);border-radius:50%}
+    .card-header{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:20px}.card-title{display:flex;align-items:center;gap:11px}.card-icon{width:42px;height:42px;border-radius:12px;background:#e7f7ff;color:var(--azul-medio);display:flex;align-items:center;justify-content:center;font-size:18px}.card h2{margin:0;color:var(--azul-escuro);font-size:17px;font-weight:800}.card-subtitle{margin:4px 0 0;color:var(--muted);font-size:10px}
+    .usuario{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.info{padding:15px;border:1px solid var(--borda);background:#fbfdff;border-radius:12px}.info span{display:block;color:var(--muted);font-size:9px;font-weight:600;margin-bottom:6px}.info strong{display:block;color:var(--azul-escuro);font-size:12px;word-break:break-word}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.campo label{display:block;color:var(--texto);font-size:11px;font-weight:700;margin-bottom:7px}.campo input,.campo select{width:100%;height:47px;padding:0 13px;border:1px solid #d4dfea;border-radius:10px;background:#fff;color:var(--texto);font-size:11px;outline:none}.campo input:focus,.campo select:focus{border-color:var(--azul-medio);box-shadow:0 0 0 3px rgba(0,106,255,.09)}
+    .campo input[disabled],.campo select[disabled]{background:#f4f7fa;color:#53657a;cursor:not-allowed;border-color:#dfe6ee}.campo select.auto-ok{background:#eef9ff;border-color:#9fddf8;color:var(--azul-escuro);font-weight:700}.campo select.manual{background:#fff;border-color:#00baff;box-shadow:0 0 0 3px rgba(0,186,255,.07)}.readonly-badge{margin-top:7px;color:var(--muted);font-size:9px}
+    .btn{height:47px;border:0;border-radius:10px;padding:0 18px;font-size:11px;font-weight:800;transition:.18s}.btn:hover{transform:translateY(-1px)}.btn-primary{background:linear-gradient(90deg,var(--azul-claro),var(--azul-medio));color:#fff;box-shadow:0 8px 17px rgba(0,106,255,.18)}.btn-secondary{background:#eaf3fb;color:var(--azul-escuro)}.btn-success{background:var(--sucesso);color:#fff}.btn-danger{background:var(--perigo);color:#fff}.btn-full{width:100%;margin-top:20px}
+    .inventory-head{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:23px}.inventory-box{padding:15px;border:1px solid var(--borda);background:#fbfdff;border-radius:12px}.inventory-box span{display:block;color:var(--muted);font-size:9px;margin-bottom:6px;font-weight:600}.inventory-box strong{color:var(--azul-escuro);font-size:12px}.inventory-box.counter{background:linear-gradient(135deg,var(--azul-claro),var(--azul-medio));border:0}.inventory-box.counter span,.inventory-box.counter strong{color:#fff}.counter-value{font-size:25px!important}
+    .divider{height:1px;background:var(--borda);margin:24px 0}.bipagem{display:grid;grid-template-columns:1fr 1.25fr 1fr 1fr;gap:16px;align-items:end}.bipagem .btn{grid-column:1/-1}.bipagem .codigo input{height:55px;border:2px solid var(--azul-claro);font-size:14px;font-weight:600}.bipagem .codigo input:focus{border-color:var(--azul-medio);box-shadow:0 0 0 4px rgba(0,106,255,.10)}
+    .modo-rapido{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 14px;margin:-4px 0 18px;background:#f7fcff;border:1px solid #dff3ff;border-radius:12px}.modo-rapido-left{display:flex;align-items:center;gap:10px}.modo-rapido-left strong{display:block;color:var(--azul-escuro);font-size:11px}.modo-rapido-left span:not(.pulse){display:block;color:var(--muted);font-size:9px;margin-top:3px}.pulse{width:9px;height:9px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 5px rgba(22,163,74,.10)}.fila-status{display:flex;gap:7px;align-items:center;white-space:nowrap}.fila-status span{font-size:9px;font-weight:700;color:var(--muted);padding:6px 9px;border-radius:20px;background:#fff;border:1px solid var(--borda)}.fila-status span:last-child{color:#147a43;background:#e8f8ee;border-color:#bfe9ce}.condicao-rapida{display:grid;grid-template-columns:1fr 1fr;gap:7px}.condicao-btn{height:47px;border:1px solid #d4dfea;border-radius:10px;background:#fff;color:var(--muted);font-size:10px;font-weight:800}.condicao-btn:hover{border-color:var(--azul-claro)}.condicao-btn.ativo[data-status="FUNCIONANDO"]{background:#e8f8ee;color:#147a43;border-color:#bfe9ce}.condicao-btn.ativo[data-status="ESTRAGADO"]{background:#fff0f0;color:#b42318;border-color:#ffd0d0}.atalho{margin-left:8px;padding:3px 6px;border-radius:6px;background:rgba(255,255,255,.15);font-size:9px}.atalhos{display:flex;gap:12px;flex-wrap:wrap;margin-top:9px;color:var(--muted);font-size:9px}.atalhos kbd{padding:3px 6px;border:1px solid #d4dfea;border-bottom-width:2px;border-radius:5px;background:#fff;color:var(--azul-escuro);font-weight:800}.item.pendente{background:#fffdf4}.item.pendente .item-condition{opacity:.75}.item .sync-dot{display:inline-flex;align-items:center;gap:5px;font-size:8px;color:var(--muted);margin-top:2px}.item .sync-dot::before{content:"";width:6px;height:6px;border-radius:50%;background:#f59e0b}.item.salvo .sync-dot{color:#147a43}.item.salvo .sync-dot::before{background:#16a34a}
+    .lista{max-height:310px;overflow:auto;border:1px solid var(--borda);border-radius:12px;background:#fbfdff}.item{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:13px 15px;border-bottom:1px solid var(--borda);font-size:11px}.item:last-child{border-bottom:0}.item strong{color:var(--azul-escuro)}.item-main{display:flex;flex-direction:column;gap:4px}.item-main span{color:var(--muted);font-size:9px}.item-condition{padding:6px 9px;border-radius:30px;font-size:9px;font-weight:800;white-space:nowrap}.item-actions{display:flex;align-items:center;gap:7px}.btn-editar{height:30px;padding:0 9px;border:1px solid #d4dfea;border-radius:8px;background:#fff;color:var(--azul-escuro);font-size:9px;font-weight:800}.btn-editar:hover{border-color:var(--azul-claro);background:#f7fcff}.edicao-condicao{display:flex;gap:6px;align-items:center}.edicao-condicao .mini-condicao{height:30px;padding:0 8px;border:1px solid #d4dfea;border-radius:8px;background:#fff;font-size:8px;font-weight:800;cursor:pointer}.edicao-condicao .mini-condicao.funcionando{color:#147a43}.edicao-condicao .mini-condicao.estragado{color:#b42318}.edicao-condicao .mini-condicao:hover{border-color:var(--azul-medio)}.item-condition.funcionando{background:#e7f8ef;color:#147a43}.item-condition.estragado{background:#fff0f0;color:#b42318}.item-status,.status{padding:6px 9px;border-radius:30px;background:#e7f8ef;color:#147a43;font-size:9px;font-weight:800;white-space:nowrap}.lista-vazia{padding:23px;text-align:center;color:var(--muted);font-size:10px}
+    .dashboard{display:grid;gap:9px}.dashboard-item{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 15px;border:1px solid var(--borda);border-radius:12px;background:#fbfdff}.dashboard-item strong{display:block;color:var(--azul-escuro);font-size:12px}.dashboard-item span{display:block;color:var(--muted);font-size:9px;margin-top:4px}
+    .oculto{display:none!important}
+    @media(max-width:1050px){.sidebar{width:215px}.main{margin-left:215px;width:calc(100% - 215px)}.grid,.inventory-head{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:760px){.app{display:block}.sidebar{position:relative;width:100%;min-height:auto}.menu,.sidebar-footer{display:none}.main{margin-left:0;width:100%}.topbar{padding:0 18px}.top-user{display:none}.content{padding:18px 13px}.usuario,.grid,.inventory-head,.bipagem{grid-template-columns:1fr}.bipagem .btn{grid-column:auto}.card{padding:18px}.card-header{align-items:flex-start}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div><strong>Inventário de Ativos</strong><span>Controle operacional</span></div>
+      </div>
+      <div class="menu-title">Menu principal</div>
+      <button class="menu-item ativo" onclick="irParaInventario()"><span class="icon">▣</span>Inventário</button>
+      <button class="menu-item" onclick="abrirPaginaDashboard()"><span class="icon">▥</span>Dashboard</button>
+      <div class="sidebar-footer">Sistema interno de controle e acompanhamento de ativos.</div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div><h1>Inventário de Ativos</h1><p>Controle e acompanhamento de ativos por base</p></div>
+        <div class="top-user"><div id="avatarUsuario" class="avatar">U</div><div><strong id="nomeTopbar">Carregando...</strong><span id="emailTopbar">Aguarde...</span><span id="perfilTopbar">Aguarde...</span></div></div>
+      </header>
+
+      <section class="content">
+        <div id="mensagem" class="mensagem"></div>
+
+        <section class="card" id="secaoInventarioConfig">
+          <div class="card-header"><div class="card-title"><div class="card-icon">▣</div><div><h2>Iniciar inventário</h2><p class="card-subtitle">Selecione a base. O sistema define automaticamente o tipo e a semana.</p></div></div></div>
+          <div class="grid">
+            <div class="campo"><label for="base">Base</label><select id="base"><option value="">Carregando bases...</option></select></div>
+            <div class="campo"><label for="tipoInventario">Tipo de inventário</label><select id="tipoInventario" disabled><option value="">Selecione a base primeiro</option></select><div class="readonly-badge">Definido automaticamente pelo histórico da base</div></div>
+            <div class="campo"><label for="semana">Semana de referência</label><input type="text" id="semana" placeholder="Semana atual" disabled readonly><div class="readonly-badge">Sempre corresponde à semana atual</div></div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="iniciarInventario()">Iniciar inventário</button>
+        </section>
+
+        <section id="areaInventario" class="card oculto">
+          <div class="card-header"><div class="card-title"><div class="card-icon">▤</div><div><h2>Inventário em andamento</h2><p class="card-subtitle">Registre os ativos encontrados na base</p></div></div><span class="status">EM ANDAMENTO</span></div>
+          <div class="inventory-head">
+            <div class="inventory-box"><span>Base</span><strong id="baseSelecionada">-</strong></div>
+            <div class="inventory-box"><span>Tipo</span><strong id="tipoSelecionado">-</strong></div>
+            <div class="inventory-box"><span>Semana</span><strong id="semanaSelecionada">-</strong></div>
+            <div class="inventory-box counter"><span>Total de ativos</span><strong id="contador" class="counter-value">0</strong></div>
+          </div>
+          <div class="divider"></div>
+          <div class="card-header"><div class="card-title"><div class="card-icon">⌁</div><div><h2>Registrar ativo</h2><p class="card-subtitle">Bipe ou digite o código do ativo</p></div></div></div>
+          <div class="modo-rapido">
+            <div class="modo-rapido-left"><span class="pulse"></span><div><strong>Modo de escaneamento rápido</strong><span>Posicione o leitor no campo do código. O tipo é identificado automaticamente e o ativo aparece na tela na hora.</span></div></div>
+            <div class="fila-status"><span id="filaContador">0 pendentes</span><span id="sincronizacaoStatus">Pronto</span></div>
+          </div>
+
+          <div class="bipagem">
+            <div class="campo"><label for="identificacaoTag">Identificação da tag</label><select id="identificacaoTag">
+              <option value="COM_TAG">Com tag</option>
+              <option value="SEM_TAG">SEM TAG</option>
+            </select></div>
+
+            <div class="campo codigo"><label for="codigoAtivo">Código do ativo</label><input type="text" id="codigoAtivo" placeholder="Bipe ou digite o código e pressione Enter" autocomplete="off"></div>
+
+            <div class="campo"><label for="tipoAtivo">Tipo do ativo</label><select id="tipoAtivo" disabled>
+              <option value="">Automático pela tag</option>
+              <option value="TABLET">Tablet</option>
+              <option value="BIP">BIP</option>
+              <option value="TERMINAL SIMPLES">Terminal simples</option>
+              <option value="CELULAR">Celular</option>
+              <option value="NOTEBOOK">Notebook</option>
+              <option value="OUTRO">Outro</option>
+            </select></div>
+
+            <div class="campo"><label>Condição do ativo</label><div class="condicao-rapida" id="condicaoRapida">
+              <button type="button" class="condicao-btn ativo" data-status="FUNCIONANDO" onclick="selecionarCondicao('FUNCIONANDO')">Funcionando</button>
+              <button type="button" class="condicao-btn" data-status="ESTRAGADO" onclick="selecionarCondicao('ESTRAGADO')">Estragado</button>
+            </div><input type="hidden" id="statusAtivo" value="FUNCIONANDO"></div>
+
+            <button id="btnRegistrar" class="btn btn-success" onclick="registrarAtivo()">Registrar ativo <span class="atalho">Enter</span></button>
+          </div>
+          <div class="atalhos"><span><kbd>Enter</kbd> registrar</span><span><kbd>Ctrl</kbd> + <kbd>1</kbd> funcionando</span><span><kbd>Ctrl</kbd> + <kbd>2</kbd> estragado</span><span><kbd>Ctrl</kbd> + <kbd>Enter</kbd> sincronizar agora</span></div>
+          <div id="listaBips" class="lista" style="margin-top:20px"><div class="lista-vazia">Nenhum ativo registrado ainda.</div></div>
+          <button class="btn btn-danger btn-full" onclick="finalizarInventario()">Finalizar inventário</button>
+        </section>
+
+      </section>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    let usuarioAtual = null;
+    let inventarioAtual = null;
+    let totalAtivos = 0;
+    let filaAtivos = [];
+    let sincronizando = false;
+    let timerSincronizacao = null;
+    const ativosRegistrados = new Map();
+    const TAMANHO_LOTE = 10;
+    const INTERVALO_LOTE_MS = 1200;
+
+    window.onload = function(){
+      carregarSistema();
+      document.getElementById("base").addEventListener("change", atualizarConfiguracaoInventario);
+      document.getElementById("identificacaoTag").addEventListener("change", atualizarModoTag);
+      document.getElementById("codigoAtivo").addEventListener("input", atualizarTipoPorPrefixo);
+      document.getElementById("codigoAtivo").addEventListener("keydown", function(e){
+        if(e.ctrlKey && e.key === "Enter"){ e.preventDefault(); sincronizarFila(true); return; }
+        if(e.key === "Enter"){ e.preventDefault(); registrarAtivo(); }
+      });
+      document.addEventListener("keydown", function(e){
+        const codigo = document.getElementById("codigoAtivo");
+        if(e.ctrlKey && e.key === "1"){ e.preventDefault(); selecionarCondicao("FUNCIONANDO"); return; }
+        if(e.ctrlKey && e.key === "2"){ e.preventDefault(); selecionarCondicao("ESTRAGADO"); return; }
+        if(e.key === "Escape" && codigo && !codigo.disabled){ codigo.focus(); codigo.select(); }
+      });
+      atualizarModoTag();
+    };
+
+    function obterMensagemErro(erro){ return (erro && erro.message) ? erro.message : "Ocorreu um erro inesperado."; }
+
+    function escaparHTML(texto){
+      return String(texto ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+    }
+
+    function carregarSistema(){
+      google.script.run.withSuccessHandler(function(dados){
+        if(!dados || !dados.usuario){ mostrarMensagem("Não foi possível carregar o usuário.","erro"); return; }
+        usuarioAtual = dados.usuario;
+        const nome = usuarioAtual.nome || "Usuário";
+        const email = usuarioAtual.email || "-";
+        const perfil = usuarioAtual.perfil || "-";
+        document.getElementById("nomeTopbar").textContent = nome;
+        document.getElementById("emailTopbar").textContent = email;
+        document.getElementById("perfilTopbar").textContent = perfil;
+        document.getElementById("avatarUsuario").textContent = nome.charAt(0).toUpperCase();
+        const selectBase = document.getElementById("base");
+        selectBase.innerHTML = '<option value="">Selecione uma base</option>';
+        (dados.bases || []).forEach(function(base){ const opt=document.createElement("option"); opt.value=base; opt.textContent=base; selectBase.appendChild(opt); });
+      }).withFailureHandler(function(erro){ mostrarMensagem(obterMensagemErro(erro),"erro"); }).obterDadosInicialSistema();
+    }
+
+    function atualizarConfiguracaoInventario(){
+      const base = document.getElementById("base").value;
+      const campoTipo = document.getElementById("tipoInventario");
+      const campoSemana = document.getElementById("semana");
+      campoTipo.disabled = true; campoSemana.disabled = true;
+      if(!base){ campoTipo.innerHTML='<option value="">Selecione a base primeiro</option>'; campoSemana.value=""; return; }
+      campoTipo.innerHTML='<option value="">Verificando...</option>';
+      google.script.run.withSuccessHandler(function(resposta){
+        if(!resposta || !resposta.sucesso){ mostrarMensagem("Não foi possível definir o inventário.","erro"); return; }
+        campoTipo.innerHTML='<option value="'+escaparHTML(resposta.tipoInventario)+'">'+escaparHTML(resposta.descricao)+'</option>';
+        campoTipo.value=resposta.tipoInventario;
+        campoSemana.value=resposta.semanaAtual || "";
+        campoTipo.disabled=true; campoSemana.disabled=true;
+        const botao = document.querySelector('#secaoInventarioConfig .btn-primary');
+        if(botao){
+          botao.textContent = resposta.continuar ? "Continuar inventário" : "Iniciar inventário";
+          botao.dataset.continuar = resposta.continuar ? "true" : "false";
+        }
+        if(resposta.continuar){
+          mostrarMensagem("Há um inventário em andamento para esta base. Ao clicar, você continuará de onde parou.","sucesso");
+        }else{
+          mostrarMensagem(resposta.descricao+" definido automaticamente para esta base.","sucesso");
+        }
+      }).withFailureHandler(function(erro){ campoTipo.innerHTML='<option value="">Erro ao carregar</option>'; campoSemana.value=""; mostrarMensagem(obterMensagemErro(erro),"erro"); }).obterConfiguracaoInventario(base);
+    }
+
+    function iniciarInventario(){
+      if(!usuarioAtual){ mostrarMensagem("Usuário ainda não carregado.","erro"); return; }
+      const base=document.getElementById("base").value;
+      const tipoInventario=document.getElementById("tipoInventario").value;
+      const semana=document.getElementById("semana").value.trim();
+      if(!base || !tipoInventario || !semana){ mostrarMensagem("Selecione uma base para definir automaticamente o tipo e a semana.","erro"); return; }
+      inventarioAtual={nomeBase:base,tipoInventario:tipoInventario,semanaReferencia:semana,responsavel:usuarioAtual.email};
+      google.script.run.withSuccessHandler(function(resposta){
+        const tipoReal = resposta.tipoInventario || tipoInventario;
+        const semanaReal = resposta.semanaReferencia || semana;
+        inventarioAtual.tipoInventario = tipoReal;
+        inventarioAtual.semanaReferencia = semanaReal;
+
+        document.getElementById("areaInventario").classList.remove("oculto");
+        document.getElementById("baseSelecionada").textContent=base;
+        document.getElementById("tipoSelecionado").textContent=tipoReal === "INICIAL" ? "Inventário Inicial" : "Inventário Semanal";
+        document.getElementById("semanaSelecionada").textContent=semanaReal;
+        totalAtivos=0; filaAtivos=[]; sincronizando=false; ativosRegistrados.clear();
+        document.getElementById("contador").textContent="0";
+        atualizarIndicadorFila();
+        document.getElementById("listaBips").innerHTML='<div class="lista-vazia">Nenhum ativo registrado ainda.</div>';
+        selecionarCondicao("FUNCIONANDO");
+
+        if(resposta.continuar){
+          google.script.run.withSuccessHandler(function(retorno){
+            const ativosServer = (retorno && retorno.ativos) || [];
+            ativosServer.forEach(function(ativo){
+              totalAtivos++;
+              adicionarNaLista(ativo, true);
+            });
+            restaurarFilaLocal();
+            document.getElementById("contador").textContent=totalAtivos;
+            atualizarIndicadorFila();
+            document.getElementById("codigoAtivo").focus();
+            mostrarMensagem((resposta.mensagem || "Inventário retomado.") + " " + ativosServer.length + " ativo(s) já registrado(s).","sucesso");
+            irParaInventario();
+          }).withFailureHandler(function(erro){
+            mostrarMensagem("Não foi possível carregar os ativos já registrados: " + obterMensagemErro(erro),"erro");
+          }).obterAtivosInventario(base, semanaReal);
+        }else{
+          restaurarFilaLocal();
+          document.getElementById("contador").textContent=totalAtivos;
+          document.getElementById("codigoAtivo").focus();
+          mostrarMensagem(resposta.mensagem,"sucesso");
+          irParaInventario();
+        }
+      }).withFailureHandler(function(erro){ mostrarMensagem(obterMensagemErro(erro),"erro"); }).registrarInventario(inventarioAtual);
+    }
+
+    const MAPA_PREFIXOS_ATIVO = [
+      { prefixos:["TERM-SIMP", "TERM-SMP"], tipo:"TERMINAL SIMPLES", descricao:"Terminal simples" },
+      { prefixos:["BIP"], tipo:"BIP", descricao:"BIP" },
+      { prefixos:["TAB"], tipo:"TABLET", descricao:"Tablet" },
+      { prefixos:["CEL"], tipo:"CELULAR", descricao:"Celular" },
+      { prefixos:["NOTE", "NTB"], tipo:"NOTEBOOK", descricao:"Notebook" }
+    ];
+
+    function identificarTipoPorPrefixo(codigo){
+      const valor = String(codigo || "").trim().toUpperCase();
+      if(!valor) return null;
+      for(const item of MAPA_PREFIXOS_ATIVO){
+        for(const prefixo of item.prefixos){
+          if(valor === prefixo || valor.indexOf(prefixo + "-") === 0 || valor.indexOf(prefixo + "_") === 0){
+            return item;
+          }
+        }
+      }
+      return null;
+    }
+
+    function atualizarModoTag(){
+      const semTag = document.getElementById("identificacaoTag").value === "SEM_TAG";
+      const codigo = document.getElementById("codigoAtivo");
+      const tipo = document.getElementById("tipoAtivo");
+      const ajuda = document.getElementById("ajudaTag");
+
+      if(semTag){
+        codigo.value = "";
+        codigo.disabled = true;
+        codigo.placeholder = "Sem tag — código interno gerado automaticamente";
+        tipo.disabled = false;
+        tipo.classList.add("manual");
+        tipo.classList.remove("auto-ok");
+        tipo.value = "";
+        if(ajuda) ajuda.textContent = "Sem tag: selecione manualmente o tipo do ativo.";
+      } else {
+        codigo.disabled = false;
+        codigo.placeholder = "Bipe ou digite o código do ativo";
+        tipo.disabled = true;
+        tipo.classList.remove("manual");
+        tipo.classList.remove("auto-ok");
+        tipo.innerHTML = '<option value="">Automático pela tag</option><option value="TABLET">Tablet</option><option value="BIP">BIP</option><option value="TERMINAL SIMPLES">Terminal simples</option><option value="CELULAR">Celular</option><option value="NOTEBOOK">Notebook</option><option value="OUTRO">Outro</option>';
+        tipo.value = "";
+        if(ajuda) ajuda.textContent = "O tipo será identificado automaticamente pelo prefixo da tag.";
+        atualizarTipoPorPrefixo();
+        setTimeout(function(){ codigo.focus(); }, 0);
+      }
+    }
+
+    function atualizarTipoPorPrefixo(){
+      const semTag = document.getElementById("identificacaoTag").value === "SEM_TAG";
+      if(semTag) return;
+
+      const codigo = document.getElementById("codigoAtivo").value;
+      const tipo = document.getElementById("tipoAtivo");
+      const item = identificarTipoPorPrefixo(codigo);
+
+      if(item){
+        tipo.value = item.tipo;
+        tipo.classList.add("auto-ok");
+      } else {
+        tipo.value = "";
+        tipo.classList.remove("auto-ok");
+      }
+    }
+
+    function selecionarCondicao(status){
+      const valor = status === "ESTRAGADO" ? "ESTRAGADO" : "FUNCIONANDO";
+      document.getElementById("statusAtivo").value = valor;
+      document.querySelectorAll(".condicao-btn").forEach(function(btn){
+        btn.classList.toggle("ativo", btn.dataset.status === valor);
+      });
+    }
+
+    function montarChaveAtivo(codigo, semTag){
+      return (semTag ? "SEM_TAG::" : "TAG::") + String(codigo || "").trim().toUpperCase();
+    }
+
+    function salvarFilaLocal(){
+      try{
+        if(!inventarioAtual) return;
+        const chave = "inventario_fila_" + inventarioAtual.nomeBase + "_" + inventarioAtual.semanaReferencia;
+        localStorage.setItem(chave, JSON.stringify(filaAtivos));
+      }catch(e){}
+    }
+
+    function limparFilaLocal(){
+      try{
+        if(!inventarioAtual) return;
+        const chave = "inventario_fila_" + inventarioAtual.nomeBase + "_" + inventarioAtual.semanaReferencia;
+        localStorage.removeItem(chave);
+      }catch(e){}
+    }
+
+    function restaurarFilaLocal(){
+      if(!inventarioAtual) return;
+      try{
+        const chave = "inventario_fila_" + inventarioAtual.nomeBase + "_" + inventarioAtual.semanaReferencia;
+        const bruto = localStorage.getItem(chave);
+        if(!bruto) return;
+        const pendentes = JSON.parse(bruto);
+        if(!Array.isArray(pendentes)) return;
+
+        const existentes = new Set();
+        ativosRegistrados.forEach(function(a){
+          existentes.add(montarChaveAtivo(a.codigoExibicao || a.codigoAtivo, a.semTag));
+        });
+
+        pendentes.forEach(function(ativo){
+          const chaveAtivo = montarChaveAtivo(ativo.codigoExibicao || ativo.codigoAtivo, ativo.semTag);
+          if(existentes.has(chaveAtivo)) return;
+          filaAtivos.push(ativo);
+          totalAtivos++;
+          adicionarNaLista(ativo, false);
+          existentes.add(chaveAtivo);
+        });
+        salvarFilaLocal();
+      }catch(e){}
+    }
+
+    function atualizarIndicadorFila(){
+      const pendentes = filaAtivos.length;
+      document.getElementById("filaContador").textContent = pendentes + (pendentes === 1 ? " pendente" : " pendentes");
+      document.getElementById("sincronizacaoStatus").textContent = sincronizando ? "Sincronizando..." : (pendentes ? "Aguardando envio" : "Tudo salvo");
+    }
+
+    function agendarSincronizacao(){
+      if(timerSincronizacao) clearTimeout(timerSincronizacao);
+      timerSincronizacao = setTimeout(function(){ sincronizarFila(false); }, INTERVALO_LOTE_MS);
+    }
+
+    function registrarAtivo(){
+      if(!inventarioAtual){ mostrarMensagem("Inicie um inventário primeiro.","erro"); return; }
+
+      const semTag = document.getElementById("identificacaoTag").value === "SEM_TAG";
+      const codigoDigitado = document.getElementById("codigoAtivo").value.trim();
+      const tipo = document.getElementById("tipoAtivo").value;
+      const statusAtivo = document.getElementById("statusAtivo").value || "FUNCIONANDO";
+
+      if(!semTag && !codigoDigitado){ mostrarMensagem("Bipe ou informe o código do ativo.","erro"); return; }
+      if(!semTag && !identificarTipoPorPrefixo(codigoDigitado)){ mostrarMensagem("Não reconheci o prefixo desta tag. Confira o código.","erro"); return; }
+      if(semTag && !tipo){ mostrarMensagem("Para SEM TAG, selecione o tipo do ativo.","erro"); return; }
+      if(!statusAtivo){ mostrarMensagem("Informe a condição do ativo.","erro"); return; }
+
+      const tipoFinal = semTag ? tipo : identificarTipoPorPrefixo(codigoDigitado).tipo;
+      const numeroTemporario = String(totalAtivos + 1).padStart(3,"0");
+      const codigoExibicao = semTag ? "SEM TAG-" + numeroTemporario : codigoDigitado.toUpperCase();
+      const chave = montarChaveAtivo(semTag ? codigoExibicao : codigoDigitado, semTag);
+
+      if(filaAtivos.some(function(item){ return item.chave === chave; })){
+        mostrarMensagem("Este ativo já está na fila de registro.","erro");
+        limparCamposDepoisDoRegistro(false);
+        return;
+      }
+
+      const ativo = {
+        id: Date.now() + "-" + Math.random().toString(36).slice(2),
+        chave: chave,
+        nomeBase: inventarioAtual.nomeBase,
+        tipoInventario: inventarioAtual.tipoInventario,
+        semanaReferencia: inventarioAtual.semanaReferencia,
+        codigoAtivo: semTag ? "" : codigoDigitado.toUpperCase(),
+        tipoAtivo: tipoFinal,
+        semTag: semTag,
+        statusAtivo: statusAtivo,
+        responsavel: usuarioAtual.email,
+        codigoExibicao: codigoExibicao
+      };
+
+      filaAtivos.push(ativo);
+      totalAtivos++;
+      document.getElementById("contador").textContent=totalAtivos;
+      adicionarNaLista(ativo, false);
+      salvarFilaLocal();
+      atualizarIndicadorFila();
+      mostrarMensagem("Ativo adicionado. " + filaAtivos.length + " pendente(s) para sincronização.","sucesso");
+
+      limparCamposDepoisDoRegistro(true);
+      if(filaAtivos.length >= TAMANHO_LOTE) sincronizarFila(false);
+      else agendarSincronizacao();
+    }
+
+    function limparCamposDepoisDoRegistro(focarCodigo){
+      const semTag = document.getElementById("identificacaoTag").value === "SEM_TAG";
+      document.getElementById("codigoAtivo").value="";
+      if(semTag){
+        document.getElementById("tipoAtivo").value="";
+        document.getElementById("tipoAtivo").focus();
+      }else if(focarCodigo){
+        document.getElementById("codigoAtivo").focus();
+      }
+    }
+
+    function sincronizarFila(forcar){
+      if(sincronizando || !inventarioAtual || filaAtivos.length === 0) return;
+      if(timerSincronizacao){ clearTimeout(timerSincronizacao); timerSincronizacao=null; }
+
+      sincronizando = true;
+      atualizarIndicadorFila();
+      const lote = filaAtivos.slice(0, forcar ? filaAtivos.length : TAMANHO_LOTE);
+
+      google.script.run.withSuccessHandler(function(resposta){
+        sincronizando=false;
+        if(resposta && resposta.sucesso){
+          const processados = new Set(resposta.idsProcessados || []);
+          const duplicados = new Set(resposta.idsDuplicados || []);
+          filaAtivos = filaAtivos.filter(function(item){ return !processados.has(item.id) && !duplicados.has(item.id); });
+          lote.forEach(function(item){
+            if(processados.has(item.id)) marcarItemSalvo(item.id);
+            if(duplicados.has(item.id)) marcarItemDuplicado(item.id);
+          });
+          salvarFilaLocal();
+          atualizarIndicadorFila();
+          mostrarMensagem(resposta.mensagem || (lote.length + " ativo(s) sincronizado(s)."),"sucesso");
+          if(filaAtivos.length) agendarSincronizacao();
+        }else{
+          atualizarIndicadorFila();
+          mostrarMensagem((resposta && resposta.mensagem) || "Não foi possível sincronizar os ativos.","erro");
+        }
+      }).withFailureHandler(function(erro){
+        sincronizando=false;
+        atualizarIndicadorFila();
+        mostrarMensagem(obterMensagemErro(erro),"erro");
+      }).registrarBipagens(lote);
+    }
+
+    function marcarItemSalvo(id){
+      const item = document.querySelector('[data-ativo-id="'+CSS.escape(String(id))+'"]');
+      if(!item) return;
+      item.classList.remove("pendente");
+      item.classList.add("salvo");
+      const dot = item.querySelector(".sync-dot");
+      if(dot) dot.textContent = "Salvo";
+    }
+
+    function marcarItemDuplicado(id){
+      const item = document.querySelector('[data-ativo-id="'+CSS.escape(String(id))+'"]');
+      if(!item) return;
+      item.classList.remove("pendente");
+      item.classList.add("salvo");
+      const dot = item.querySelector(".sync-dot");
+      if(dot) dot.textContent = "Já registrado";
+    }
+
+    function adicionarNaLista(ativo, salvo){
+      ativosRegistrados.set(String(ativo.id), ativo);
+      const lista=document.getElementById("listaBips");
+      const vazio=lista.querySelector(".lista-vazia");
+      if(vazio) vazio.remove();
+
+      const item=document.createElement("div");
+      item.className="item " + (salvo ? "salvo" : "pendente");
+      item.dataset.ativoId = ativo.id;
+      item.dataset.codigoAtivo = ativo.codigoExibicao;
+      item.dataset.statusAtivo = ativo.statusAtivo;
+      renderizarItemRegistrado(item, ativo, salvo ? "Salvo" : "Aguardando envio");
+      lista.prepend(item);
+    }
+
+    function renderizarItemRegistrado(item, ativo, textoSync){
+      const classeStatus = ativo.statusAtivo === "ESTRAGADO" ? "estragado" : "funcionando";
+      const textoStatus = ativo.statusAtivo === "ESTRAGADO" ? "Estragado" : "Funcionando";
+      const textoTipo = ativo.tipoAtivo || "Tipo não informado";
+      item.innerHTML='<div class="item-main"><strong>'+escaparHTML(ativo.codigoExibicao)+'</strong><span>'+escaparHTML(textoTipo)+'</span><span class="sync-dot">'+escaparHTML(textoSync)+'</span></div><div class="item-actions"><span class="item-condition '+classeStatus+'">'+textoStatus+'</span><button type="button" class="btn-editar btn-editar-ativo">Editar</button></div>';
+      item.querySelector('.btn-editar-ativo').addEventListener('click', function(){ editarAtivo(String(ativo.id)); });
+    }
+
+    function editarAtivo(id){
+      const chave = String(id);
+      const ativo = ativosRegistrados.get(chave);
+      if(!ativo){ mostrarMensagem("Não foi possível localizar este ativo.","erro"); return; }
+      const item = document.querySelector('[data-ativo-id="'+CSS.escape(chave)+'"]');
+      if(!item) return;
+
+      if(item.querySelector(".edicao-condicao")){ return; }
+
+      const textoTipo = ativo.tipoAtivo || "Tipo não informado";
+      const textoSync = item.querySelector(".sync-dot") ? item.querySelector(".sync-dot").textContent : "Salvo";
+      item.innerHTML='<div class="item-main"><strong>'+escaparHTML(ativo.codigoExibicao)+'</strong><span>'+escaparHTML(textoTipo)+'</span><span class="sync-dot">'+escaparHTML(textoSync)+'</span></div><div class="edicao-condicao"><button type="button" class="mini-condicao funcionando" data-novo-status="FUNCIONANDO">Funcionando</button><button type="button" class="mini-condicao estragado" data-novo-status="ESTRAGADO">Estragado</button><button type="button" class="btn-editar cancelar-edicao">Cancelar</button></div>';
+      item.querySelectorAll('.mini-condicao').forEach(function(btn){ btn.addEventListener('click', function(){ salvarEdicaoStatus(chave, btn.dataset.novoStatus); }); });
+      item.querySelector('.cancelar-edicao').addEventListener('click', function(){ cancelarEdicao(chave); });
+    }
+
+    function cancelarEdicao(id){
+      const ativo = ativosRegistrados.get(String(id));
+      const item = document.querySelector('[data-ativo-id="'+CSS.escape(String(id))+'"]');
+      if(!ativo || !item) return;
+      const salvo = !item.classList.contains("pendente");
+      renderizarItemRegistrado(item, ativo, salvo ? "Salvo" : "Aguardando envio");
+    }
+
+    function salvarEdicaoStatus(id, novoStatus){
+      const chave = String(id);
+      const ativo = ativosRegistrados.get(chave);
+      const item = document.querySelector('[data-ativo-id="'+CSS.escape(chave)+'"]');
+      if(!ativo || !item) return;
+      if(novoStatus !== "FUNCIONANDO" && novoStatus !== "ESTRAGADO") return;
+      const statusAnterior = ativo.statusAtivo;
+      ativo.statusAtivo = novoStatus;
+      ativosRegistrados.set(chave, ativo);
+
+      const pendenteNaFila = filaAtivos.find(function(x){ return String(x.id) === chave; });
+      if(pendenteNaFila){
+        pendenteNaFila.statusAtivo = novoStatus;
+        salvarFilaLocal();
+        renderizarItemRegistrado(item, ativo, "Aguardando envio");
+        mostrarMensagem("Condição atualizada. Será salva na próxima sincronização.","sucesso");
+        return;
+      }
+
+      item.classList.add("pendente");
+      item.classList.remove("salvo");
+      renderizarItemRegistrado(item, ativo, "Atualizando...");
+      google.script.run.withSuccessHandler(function(resposta){
+        if(!resposta || !resposta.sucesso){
+          ativo.statusAtivo = statusAnterior;
+          ativosRegistrados.set(chave, ativo);
+          item.classList.remove("pendente");
+          item.classList.add("salvo");
+          renderizarItemRegistrado(item, ativo, "Salvo");
+          mostrarMensagem((resposta && resposta.mensagem) || "Não foi possível atualizar a condição.","erro");
+          return;
+        }
+        item.classList.remove("pendente");
+        item.classList.add("salvo");
+        renderizarItemRegistrado(item, ativo, "Salvo");
+        mostrarMensagem("Condição atualizada para " + (novoStatus === "ESTRAGADO" ? "Estragado" : "Funcionando") + ".","sucesso");
+      }).withFailureHandler(function(erro){
+        ativo.statusAtivo = statusAnterior;
+        ativosRegistrados.set(chave, ativo);
+        item.classList.remove("pendente");
+        item.classList.add("salvo");
+        renderizarItemRegistrado(item, ativo, "Salvo");
+        mostrarMensagem(obterMensagemErro(erro),"erro");
+      }).atualizarStatusAtivo({
+        nomeBase: ativo.nomeBase,
+        semanaReferencia: ativo.semanaReferencia,
+        codigoAtivo: ativo.codigoExibicao,
+        statusAtivo: novoStatus,
+        responsavel: usuarioAtual.email
+      });
+    }
+
+    function finalizarInventario(){
+      if(!inventarioAtual){ mostrarMensagem("Nenhum inventário em andamento.","erro"); return; }
+      if(filaAtivos.length){
+        mostrarMensagem("Ainda existem " + filaAtivos.length + " ativo(s) aguardando sincronização. Enviando agora...","sucesso");
+        sincronizarFila(true);
+        return;
+      }
+      if(sincronizando){
+        mostrarMensagem("Aguarde a sincronização terminar para finalizar o inventário.","erro");
+        return;
+      }
+      if(!confirm("Deseja realmente finalizar este inventário?")) return;
+      const dadosFinalizacao={nomeBase:inventarioAtual.nomeBase,semanaReferencia:inventarioAtual.semanaReferencia};
+      google.script.run.withSuccessHandler(function(resposta){
+        const totalFinal = resposta.totalAtivos ?? resposta.totalBips ?? totalAtivos;
+        mostrarMensagem((resposta.mensagem || "Inventário finalizado.")+" Total de ativos: "+totalFinal,"sucesso");
+        limparFilaLocal();
+        document.getElementById("areaInventario").classList.add("oculto"); inventarioAtual=null; filaAtivos=[]; ativosRegistrados.clear(); totalAtivos=0; document.getElementById("contador").textContent="0"; atualizarIndicadorFila(); irParaInventario();
+      }).withFailureHandler(function(erro){ mostrarMensagem(obterMensagemErro(erro),"erro"); }).finalizarInventario(dadosFinalizacao);
+    }
+
+    function mostrarMensagem(texto,tipo){ const m=document.getElementById("mensagem"); m.textContent=texto||""; m.className="mensagem "+tipo; }
+    function irParaInventario(){
+      const area = document.getElementById("areaInventario");
+      const destino = area && !area.classList.contains("oculto") ? area : document.getElementById("secaoInventarioConfig");
+      destino.scrollIntoView({behavior:"smooth",block:"start"});
+    }
+    function abrirPaginaDashboard(){
+      google.script.run.withSuccessHandler(function(url){ window.top.location.href = url; }).withFailureHandler(function(erro){ mostrarMensagem(obterMensagemErro(erro),"erro"); }).obterUrlPagina("dashboard");
+    }
+  </script>
+</body>
+</html>
