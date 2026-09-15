@@ -1,0 +1,53 @@
+name: Deploy Google Apps Script
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Restore clasp credentials
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          CLASP_JSON: ${{ secrets.CLASP_JSON }}
+        run: |
+          test -n "$CLASPRC_JSON" || (echo "Secret CLASPRC_JSON não configurado." && exit 1)
+          test -n "$CLASP_JSON" || (echo "Secret CLASP_JSON não configurado." && exit 1)
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > .clasp.json
+
+      - name: Validate deployment files
+        run: |
+          test -f appsscript.json
+          test -f Código.gs
+          test -f Index.html
+          test -f Login.html
+
+      - name: Push code to Apps Script
+        run: npx --yes @google/clasp@latest push --force
+
+      - name: Create Apps Script version
+        run: |
+          npx --yes @google/clasp@latest version "GitHub $GITHUB_SHA"
+
+      - name: Deploy latest version
+        if: ${{ secrets.CLASP_DEPLOYMENT_ID != '' }}
+        env:
+          CLASP_DEPLOYMENT_ID: ${{ secrets.CLASP_DEPLOYMENT_ID }}
+        run: |
+          npx --yes @google/clasp@latest deploy --deploymentId "$CLASP_DEPLOYMENT_ID" --description "GitHub $GITHUB_SHA"
