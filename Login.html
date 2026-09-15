@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Inventário de Ativos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--azul:#006aff;--azul-claro:#00baff;--azul-escuro:#002766;--fundo:#f5f9fc;--borda:#e5edf5;--texto:#152238;--muted:#667085}
+    *{box-sizing:border-box} body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--azul-claro),var(--azul));font-family:Montserrat,Arial,sans-serif;color:var(--texto)}
+    .card{width:min(430px,calc(100% - 32px));background:#fff;border-radius:22px;padding:38px 34px;box-shadow:0 22px 60px rgba(0,39,102,.22);text-align:center}
+    .brand{font-weight:700;font-size:28px;color:var(--azul-escuro);margin-bottom:8px}.subtitle{font-size:13px;color:var(--muted);margin-bottom:28px}
+    .btn{width:100%;border:0;border-radius:12px;padding:14px 18px;background:var(--azul);color:#fff;font:600 14px Montserrat,Arial,sans-serif;cursor:pointer;transition:.15s}.btn:hover{filter:brightness(.96);transform:translateY(-1px)}.btn:disabled{opacity:.7;cursor:wait;transform:none}
+    .msg{min-height:20px;margin-top:16px;font-size:12px}.erro{color:#b42318}.sucesso{color:#067647}
+    .obs{margin-top:24px;padding-top:18px;border-top:1px solid var(--borda);font-size:11px;color:var(--muted);line-height:1.6}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">Inventário de Ativos</div>
+    <div class="subtitle">Acesso ao sistema de controle operacional</div>
+    <button id="entrar" class="btn" onclick="entrar()">Entrar com minha conta Google</button>
+    <div id="mensagem" class="msg"></div>
+    <div class="obs">Use sua conta corporativa autorizada para acessar o sistema.</div>
+  </div>
+  <script>
+    function entrar(){
+      const btn=document.getElementById('entrar');
+      const msg=document.getElementById('mensagem');
+      btn.disabled=true; btn.textContent='Validando acesso...'; msg.className='msg'; msg.textContent='';
+      google.script.run.withSuccessHandler(function(res){
+        if(res && res.autorizado){
+          msg.className='msg sucesso'; msg.textContent='Acesso autorizado. Abrindo sistema...';
+          google.script.run.withSuccessHandler(function(url){window.top.location.href=url;}).withFailureHandler(function(err){msg.className='msg erro'; msg.textContent=(err&&err.message)||String(err); btn.disabled=false; btn.textContent='Entrar com minha conta Google';}).obterUrlSistema();
+        }else{
+          msg.className='msg erro'; msg.textContent=(res&&res.mensagem)||'Acesso não autorizado.'; btn.disabled=false; btn.textContent='Entrar com minha conta Google';
+        }
+      }).withFailureHandler(function(err){msg.className='msg erro'; msg.textContent=(err&&err.message)||String(err); btn.disabled=false; btn.textContent='Entrar com minha conta Google';}).validarLogin();
+    }
+  </script>
+</body>
+</html>
