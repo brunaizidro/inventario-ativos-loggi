@@ -46,8 +46,8 @@ jobs:
           npx --yes @google/clasp@latest version "GitHub $GITHUB_SHA"
 
       - name: Deploy latest version
-        if: ${{ secrets.CLASP_DEPLOYMENT_ID != '' }}
         env:
           CLASP_DEPLOYMENT_ID: ${{ secrets.CLASP_DEPLOYMENT_ID }}
+        if: env.CLASP_DEPLOYMENT_ID != ''
         run: |
           npx --yes @google/clasp@latest deploy --deploymentId "$CLASP_DEPLOYMENT_ID" --description "GitHub $GITHUB_SHA"
